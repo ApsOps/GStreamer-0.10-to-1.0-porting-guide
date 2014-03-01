@@ -8,3 +8,4 @@ Some useful external links
 --------------------------
 
 - https://wiki.ubuntu.com/Novacut/GStreamer1.0
+- http://gstreamer.freedesktop.org/data/doc/gstreamer/head/manual/html/chapter-porting-1.0.html
