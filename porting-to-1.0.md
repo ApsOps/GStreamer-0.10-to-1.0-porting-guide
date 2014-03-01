@@ -1,42 +1,44 @@
 GStreamer 0.10 to 1.0 porting guide
------------------------------------
+===================================
 
 PREFACE
+-------
 
-* All deprecated methods were removed. Recompile against 0.10 with
+1. All deprecated methods were removed. Recompile against 0.10 with
   DISABLE_DEPRECATED and fix issues before attempting to port to 1.0.
 
-* API changes are usually easy to spot, because the compiler will
+1. API changes are usually easy to spot, because the compiler will
   generate a warning, at least if number of arguments or types differ
 
-* Other changes are a bit more subtle. See checklist at the bottom
+1. Other changes are a bit more subtle. See checklist at the bottom
   for some "soft" changes which the compiler will not warn about.
 
-* python developers may find https://wiki.ubuntu.com/Novacut/GStreamer1.0
+1. python developers may find https://wiki.ubuntu.com/Novacut/GStreamer1.0
   useful
 
-* application developers may first want to have a look at the list of changes
+1. application developers may first want to have a look at the list of changes
   affecting applications in the Application Development Manual:
   http://gstreamer.freedesktop.org/data/doc/gstreamer/head/manual/html/chapter-porting-1.0.html
 
 
 CHANGES
+-------
 
-* GST_BOILERPLATE is gone, use G_DEFINE_TYPE instead (note that the variable
+1. GST_BOILERPLATE is gone, use G_DEFINE_TYPE instead (note that the variable
   that used to be called parent_class is then called gst_foo_bar_parent_class)
 
-* various methods take a gsize instead of a guint when talking about memory
+1. various methods take a gsize instead of a guint when talking about memory
   sizes.
 
-* multifdsink, tcpclientsink, tcpclientsrc, tcpserversrc the protocol property
+1. multifdsink, tcpclientsink, tcpclientsrc, tcpserversrc the protocol property
   is removed, use gdppay and gdpdepay.
 
-* Presets and plugins moved to $XDG_DATA_HOME/gstreamer-1.0/ root
+1. Presets and plugins moved to $XDG_DATA_HOME/gstreamer-1.0/ root
   directory. Registry moved to $XDG_CACHE_HOME/gstreamer-1.0/.
   XDG_CACHE_HOME usually points to $HOME/.cache and XDG_DATA_HOME
   usually is $HOME/.local/share/.
 
-* GstObject:
+1. GstObject:
     GST_OBJECT_DISPOSING flag removed
     GST_OBJECT_IS_DISPOSING removed
     GST_OBJECT_FLOATING flag remove, GstObject is now GInitiallyUnowned
@@ -55,20 +57,22 @@ CHANGES
     parent-set and parent-unset signals removed. Use notify:parent. Currently
     still disabled because of deep notify locking issues.
 
-* GstElement:
+1. GstElement:
     GstElementDetails is removed and replaced with more generic metadata.
 
+    ```
     gst_element_class_set_details_simple() -> gst_element_class_set_metadata()
     gst_element_class_set_documentation_uri -> gst_element_class_add_metadata
     gst_element_class_set_icon_name -> gst_element_class_add_metadata
     also gst_element_class_get_metadata()
-
+    
     gst_element_factory_get_longname -> gst_element_factory_get_metadata
     gst_element_factory_get_klass -> gst_element_factory_get_metadata
     gst_element_factory_get_description -> gst_element_factory_get_metadata
     gst_element_factory_get_author -> gst_element_factory_get_metadata
     gst_element_factory_get_documentation_uri -> gst_element_factory_get_metadata
     gst_element_factory_get_icon_name -> gst_element_factory_get_metadata
+    ```
 
     gstelementmetadata.h contains the keys for all standard metadata.
 
@@ -94,7 +98,7 @@ CHANGES
     gst_element_found_tags() and gst_element_found_tags_for_pad() are gone, just
     push the tag event.
 
-* GstPad:
+1. GstPad:
     gst_pad_get_caps() was replaced by gst_pad_query_caps(), it
     does not return writable caps anymore and an explicit
     gst_caps_make_writable() needs to be performed. This was the functionality
@@ -178,7 +182,7 @@ CHANGES
 
     GstPadFlags: GST_PAD_* -> GST_PAD_FLAG_*
 
-* GstPadTemplate
+1. GstPadTemplate
     gst_pad_template_get_caps() returns a new reference of the caps
     and the return value needs to be unreffed after usage.
 
@@ -190,7 +194,7 @@ CHANGES
     GstPadTemplate instances are considered immutable and must not be
     changed.
 
-* GstMiniObject
+1. GstMiniObject
     A miniobject is now a simple refcounted structure holding the information
     common to buffers, events, messages, queries and caps.
 
@@ -224,7 +228,7 @@ CHANGES
     with the GstMemory API. Writability of miniobjects is now either done
     by using the refcount or by using exclusive locking.
 
-* GstBuffer
+1. GstBuffer
     A GstBuffer is now a simple boxed type this means that subclassing is not
     possible anymore. 
 
@@ -288,7 +292,7 @@ CHANGES
     of memory is needed at all when the element can deal with individual memory
     chunks.
 
-* GstBufferList
+1. GstBufferList
     The GstBufferList object is much simplified because most of the
     functionality in the groups is now part of the GstMemory in buffers.
     
@@ -303,7 +307,7 @@ CHANGES
     gst_buffer_list_sized_new() -> gst_buffer_list_new_sized()
     gst_buffer_list_len() -> gst_buffer_list_length()
 
-* GstStructure
+1. GstStructure
 
     The GArray of the structure fields are moved to private part and are not
     accessible from the application anymore. Use the methods to retrieve and
@@ -313,7 +317,7 @@ CHANGES
     gst_structure_id_empty_new() -> gst_structure_new_id_empty()
     gst_structure_id_new() -> gst_structure_new_id()
 
-* GstEvent
+1. GstEvent
     Boxed types derived from GstMiniObject.
 
     GST_EVENT_SRC is removed. Don't use this anymore.
@@ -335,7 +339,7 @@ CHANGES
     gst_event_new_flush_stop() now takes a boolean, which in most cases should
     be TRUE
 
-* GstQuery
+1. GstQuery
     Boxed types derived from GstMiniObject.
 
     The GstStructure is removed from the public API, use the getters to get
@@ -349,23 +353,23 @@ CHANGES
     Some query utility functions no longer use an inout parameter for the
     destination/query format:
 
-      - gst_pad_query_position()
-      - gst_pad_query_duration()
-      - gst_pad_query_convert()
-      - gst_pad_query_peer_position()
-      - gst_pad_query_peer_duration()
-      - gst_pad_query_peer_convert()
-      - gst_element_query_position()
-      - gst_element_query_duration()
-      - gst_element_query_convert()
+       1. gst_pad_query_position()
+       1. gst_pad_query_duration()
+       1. gst_pad_query_convert()
+       1. gst_pad_query_peer_position()
+       1. gst_pad_query_peer_duration()
+       1. gst_pad_query_peer_convert()
+       1. gst_element_query_position()
+       1. gst_element_query_duration()
+       1. gst_element_query_convert()
 
     gst_element_get_query_types() and gst_pad_get_query_types() with associated
     functions were removed.
 
-* GstBufferList
+1. GstBufferList
     Is now a boxed type derived from GstMiniObject.
 
-* GstMessage
+1. GstMessage
     Is now a boxed type derived from GstMiniObject
 
     The GstStructure is removed from the public API, use the getters to get
@@ -376,7 +380,7 @@ CHANGES
     gst_message_parse_duration() was removed (not needed any longer, do
     a duration query to query the updated duration)
 
-* GstCaps
+1. GstCaps
     Is now a boxed type derived from GstMiniObject.
 
     GST_VIDEO_CAPS_xxx -> GST_VIDEO_CAPS_MAKE(xxx)
@@ -398,11 +402,11 @@ CHANGES
       gst_caps_union() -> gst_caps_merge():  Be careful because _merge takes
                  ownership of the arguments.
 
-* GstClock
+1. GstClock
     gst_clock_id_wait_async_full() was renamed to gst_clock_id_wait_async() and
     the old gst_clock_id_wait_async() function was removed.
 
-* GstSegment
+1. GstSegment
     abs_rate was removed from the public fields, it can be trivially calculated
     from the rate field.
 
@@ -427,21 +431,21 @@ CHANGES
     gst_segment_set_seek() -> gst_segment_do_seek(). Updates the segment values
     with seek parameters.
 
-* GstPluginFeature
+1. GstPluginFeature
     GST_PLUGIN_FEATURE_NAME() was removed, use GST_OBJECT_NAME() instead.
 
-* GstTypeFind
+1. GstTypeFind
     gst_type_find_peek() returns a const guint8 * now.
 
-* GstTask
+1. GstTask
     gst_task_create() -> gst_task_new()
 
-* GstAudio
+1. GstAudio
     GstBaseAudioSink -> GstAudioBaseSink
     GstBaseAudioSrc -> GstAudioBaseSrc
     ...
 
-* GstAdapter
+1. GstAdapter
     gst_adapter_peek() is removed, use gst_adapter_map() and gst_adapter_unmap()
     to get access to raw data from the adapter.
 
@@ -450,27 +454,27 @@ CHANGES
     gst_adapter_prev_timestamp() is removed and should be replaced with
     gst_adapter_prev_pts() and gst_adapter_prev_dts().
 
-* GstBitReader, GstByteReader, GstByteWriter
+1. GstBitReader, GstByteReader, GstByteWriter
     gst_*_reader_new_from_buffer(), gst_*_reader_init_from_buffer() removed, get
     access to the buffer data with _map() and then use the _new() functions.
 
     gst_byte_reader_new_from_buffer() and gst_byte_reader_init_from_buffer()
     removed, get access to the buffer data and then use the _new() functions.
 
-* GstCollectPads
+1. GstCollectPads
     gst_collect_pads_read() removed, use _read_buffer() or _take_buffer() and
     then use the memory API to get to the memory.
 
-* GstBaseSrc, GstBaseTransform, GstBaseSink
+1. GstBaseSrc, GstBaseTransform, GstBaseSink
     GstBaseSrc::get_caps(), GstBaseTransform::transform_caps() and
     GstBaseSink::get_caps() now take a filter GstCaps* parameter to
     filter the caps and allow better negotiation decisions.
 
-* GstBaseSrc
+1. GstBaseSrc
     When overriding GstBaseTransform::fixate() one should chain up to the parent
     implementation.
  
-* GstBaseTransform
+1. GstBaseTransform
     GstBaseTransform::transform_caps() now gets the complete caps passed
     instead of getting it passed structure by structure.
 
@@ -481,34 +485,34 @@ CHANGES
     The semantics of the sink_event are thus the same as those for the src_event
     function.
 
-* GstImplementsInterface
+1. GstImplementsInterface
     has been removed. Interfaces need to be updated to either have
     is_ready/usable/available() methods, or have GError arguments
     to their methods so we can return an appropriate error if a
     particular interface isn't supported for a particular device.
 
-* GstIterator
+1. GstIterator
     uses a GValue based API now that is similar to the 0.10 API but
     allows bindings to properly use GstIterator and prevents complex
     return value ownership issues.
 
-* GstNavigationInterface
+1. GstNavigationInterface
     Now part of the video library in gst-plugins-base, and the interfaces
     library no longer exists.
 
-* GstMixerInterface / GstTunerInterface
+1. GstMixerInterface / GstTunerInterface
     Removed - no replacement?
 
-* GstXOverlay interface
+1. GstXOverlay interface
     Renamed to GstVideoOverlay, and now part of the video library in
     gst-plugins-base, as the interfaces library no longer exists.
 
-* GstPropertyProbe interface
+1. GstPropertyProbe interface
     Removed - no replacement yet, but a more featureful replacement
     for device discovery and feature querying is planned, see
     https://bugzilla.gnome.org/show_bug.cgi?id=678402
 
-* GstURIHandler
+1. GstURIHandler
     gst_uri_handler_get_uri() and the get_uri vfunc now return a copy of
     the URI string
 
@@ -520,7 +524,7 @@ CHANGES
     is one of the protocols advertised by the uri handler, so set_uri vfunc
     implementations no longer need to check that as well.
 
-* GstTagList
+1. GstTagList
     is now an opaque mini object instead of being typedefed to a GstStructure.
 
     While it was previously okay (and in some cases required because of
@@ -547,7 +551,7 @@ CHANGES
 
     gst_is_tag_list() => GST_IS_TAG_LIST ()
 
-* GstController:
+1. GstController:
     has now been merged into GstObject. It does not exists as a individual
     object anymore. In addition core contains a GstControlSource base class and
     the GstControlBinding. The actual control sources are in the controller
@@ -585,24 +589,24 @@ CHANGES
     enum values have been renamed from GST_INTERPOLATE_XXX to
     GST_INTERPOLATION_MODE_XXX.
 
-* GstRegistry
+1. GstRegistry
 
     gst_registry_get_default() -> gst_registry_get()
     gst_default_registry_*(...) -> gst_registry_*(gst_registry_get(), ...)
 
-* GstValue
+1. GstValue
 
     GST_TYPE_DATE -> G_TYPE_DATE
     GST_VALUE_HOLDS_DATE(value) -> G_VALUE_HOLDS(value,G_TYPE_DATE)
     gst_value_set_date() -> g_value_set_boxed()
     gst_value_get_date() -> g_value_get_boxed()
 
-* GError/GstGError
+1. GError/GstGError
 
     GstGError -> GError
     GST_TYPE_G_ERROR / gst_g_error_get_type() -> G_TYPE_ERROR
 
-* GstVideo
+1. GstVideo
 
     GstXOverlay interface -> renamed to GstVideoOverlay, and now part of
     the video library in gst-plugins-base, as the interfaces library
@@ -611,22 +615,21 @@ CHANGES
     gst_video_format_parse_caps() -> use gst_video_info_from_caps() and
         then GstVideoInfo.
 
-* GstChildProxy
+1. GstChildProxy
 
     gst_child_proxy_lookup() can no longer be called on GObjects that
     do not implement the GstChildProxy interface. Use
       g_object_class_find_property (G_OBJECT_GET_CLASS (obj), "foo")
     instead for non-childproxy objects.
 
-* "codec-data" and "streamheader" field in GstCaps (not implemented yet!)
+1. "codec-data" and "streamheader" field in GstCaps (not implemented yet!)
 
     codec-data and stream headers are no longer in GstCaps, but sent as
     part of a STREAM CONFIG event (which should be sent after the initial
     CAPS event if needed).
 
-=============================================================================
   Porting checklist - "soft" API changes
-=============================================================================
+  =======================================
 
  * the "ffmpegcolorspace" element has been replaced by "videoconvert"
 
@@ -740,9 +743,8 @@ CHANGES
           playbin uri=file:///path/to/foo.flac audio-sink=pulsesink
 
 
-=============================================================================
   Troubleshooting
-=============================================================================
+  ===============
 
  * GLib-GObject-WARNING **: cannot register existing type `GstObject'
 
